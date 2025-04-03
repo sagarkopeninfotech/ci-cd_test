@@ -1,0 +1,48 @@
+name: Deploy to Hetzner
+
+on:
+  push:
+    branches:
+      - main  # Change branch if needed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t my-app:latest .
+        docker save my-app:latest > my-app.tar
+
+    - name: Deploy to Hetzner Server
+      env:
+        PRIVATE_KEY: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCTIK+yAV8NLMUkxJjfPwquPMGN5sAHjKW4r+RWE1W+WaYGIlQT3MRCYA2U5Io1LJmPgKGvq+3zeT1ic46t1uNTkpICKqZFWR4KV2BZXRxh/Q/gsvQ+/wp4CsoBJnB0krNmwKXeZZKh/FpDqC27dIMl/w84vXMRMgGJ1m2BGXrb7QQ5i+qSrVEPSAF85s3B0BEeoC/4d7VdoYWVQXHfgCE68QfcZGvUHOFtmWMWsq1QwSLX5v3tzyz5QTNFfO9W11e3Lt+fGkX/xiOqPime/JKKz8ZTbfKTZtPVyBdCo3bLjcrtgNY/k1aWq6EuQkKswQ7zBsjT/L1AVBnVE04HOwCXoZaYXvvKjPPk2OStbmmKzuxittnxjJ4Rw92kNMhbLGOIL5FKoTahrE2w2dfHLRAjOSCqxP/KswU7r8YCZVVGPWaY9VRX7nH9tI4eG6i1SrC/PdbzE/4gBhA9Mx+V4oxPT3BZSUZNnRVzCPpJ0Hu29WAfdI/X3EqSTAX0xzUbhNYkBUx3uZRrJGelwZOt+Qbnhmrfw9E3tMpJhZlDCNe4vNjb1rM2/mSJ4vf0zVeH6Ffj+64qDtCtONZvrkt7+wnIoFhp3Ut2G+0dwMU/9Jm2domhJXbZa3gxEcG5UDo2NSRoqxnIlwh3TipjBxwGZ05JmV3xhnFXuW4cw52On+ZXHw== sagark.openinfotech@gmail.com
+        HOST: 37.27.93.34
+        USER: root
+      run: |
+        echo "$PRIVATE_KEY" > private_key.pem
+        chmod 600 private_key.pem
+
+        # Transfer Docker image and compose files to Hetzner
+        scp -o StrictHostKeyChecking=no -i private_key.pem my-app.tar docker-compose.yml $USER@$HOST:/home/$USER/
+
+        # SSH into the Hetzner server and deploy the application
+        ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << 'EOF'
+          # Load the Docker image
+          docker load < /home/$USER/my-app.tar
+
+          # Start the container using Docker Compose
+          docker-compose -f /home/$USER/docker-compose.yml up -d --force-recreate
+
+          # Cleanup
+          rm -f /home/$USER/my-app.tar
+        EOF
+
+        rm -f private_key.pem  # Cleanup on GitHub Actions runner
