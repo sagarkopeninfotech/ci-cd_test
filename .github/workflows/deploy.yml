@@ -27,7 +27,7 @@ jobs:
         HOST: 37.27.93.34
         USER: root
       run: |
-        echo "$PRIVATE_KEY" > private_key.pem
+        echo "$PRIVATE_KEY" > id_rsa.pub
         chmod 600 private_key.pem
 
         # Transfer Docker image and compose files to Hetzner
