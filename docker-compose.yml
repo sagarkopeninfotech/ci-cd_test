@@ -3,6 +3,6 @@ services:
   angular-app:
     build: .
     ports:
-      - "4587:80"
+      - "4587:4587"
     restart: always
 
