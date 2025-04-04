@@ -30,8 +30,8 @@ jobs:
           echo "$PRIVATE_KEY" > id_rsa
           chmod 600 id_rsa
 
-          # Transfer Docker image and compose files to Hetzner
-          scp -o StrictHostKeyChecking=no -i id_rsa my-app.tar docker-compose.yml $USER@$HOST:/root/
+    # Transfer Docker image and compose files to Hetzner
+    ssh -o StrictHostKeyChecking=no -i id_rsa my-app.tar docker-compose.yml $USER@$HOST:/root/
 
           # SSH into the Hetzner server and deploy the application
           ssh -o StrictHostKeyChecking=no -i id_rsa $USER@$HOST << 'EOF'
