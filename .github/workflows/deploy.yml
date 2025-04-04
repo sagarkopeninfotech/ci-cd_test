@@ -3,7 +3,7 @@ name: Deploy to Hetzner
 on:
   push:
     branches:
-      - main  # Change branch if needed
+      - main
 
 jobs:
   deploy:
@@ -13,15 +13,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build Docker Image
-        run: |
-          docker build -t my-app:latest .
-          docker save my-app:latest > my-app.tar
-
-      - name: Deploy to Hetzner Server
+      - name: Deploy docker-compose.yml to Hetzner Server and Rebuild
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           HOST: ${{ secrets.HOST }}
@@ -31,15 +23,23 @@ jobs:
           echo "$PRIVATE_KEY" > id_rsa
           chmod 600 id_rsa
 
-          # Transfer Docker image and compose file to the server
-          scp -o StrictHostKeyChecking=no -i id_rsa my-app.tar docker-compose.yml $USER@$HOST:/root/
 
-          # SSH into the server and deploy
+          # Send updated docker-compose.yml to server
+          scp -o StrictHostKeyChecking=no -i id_rsa docker-compose.yml $USER@$HOST:/root/
+
+          # SSH in, pull latest project code and rebuild
+
           ssh -o StrictHostKeyChecking=no -i id_rsa $USER@$HOST << 'EOF'
-            docker load < /root/my-app.tar
-            docker-compose -f /root/docker-compose.yml up -d --force-recreate
-            rm -f /root/my-app.tar
+            cd /root/your-project-folder
+
+            git pull origin main  # Pull latest code from GitHub
+            cp /root/docker-compose.yml .  # Replace compose file if needed
+
+            docker-compose build --no-cache
+            docker-compose up -d --force-recreate
           EOF
 
+
           # Cleanup the key
+
           rm -f id_rsa
