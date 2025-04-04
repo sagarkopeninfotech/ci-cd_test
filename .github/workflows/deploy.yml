@@ -19,13 +19,16 @@ jobs:
           HOST: ${{ secrets.HOST }}
           USER: ${{ secrets.USER }}
         run: |
+          # Save the private key
           echo "$PRIVATE_KEY" > id_rsa
           chmod 600 id_rsa
+
 
           # Send updated docker-compose.yml to server
           scp -o StrictHostKeyChecking=no -i id_rsa docker-compose.yml $USER@$HOST:/root/
 
           # SSH in, pull latest project code and rebuild
+
           ssh -o StrictHostKeyChecking=no -i id_rsa $USER@$HOST << 'EOF'
             cd /root/your-project-folder
 
@@ -35,5 +38,8 @@ jobs:
             docker-compose build --no-cache
             docker-compose up -d --force-recreate
           EOF
+
+
+          # Cleanup the key
 
           rm -f id_rsa
