@@ -28,13 +28,13 @@ jobs:
         USER: root
       run: |
         echo "$PRIVATE_KEY" > id_rsa.pub
-        chmod 600 my-key.pem
+        chmod 600 id_rsa.pub
 
         # Transfer Docker image and compose files to Hetzner
-        scp -o StrictHostKeyChecking=no -i my-key.pem my-app.tar docker-compose.yml $USER@$HOST:/home/$USER/
+        scp -o StrictHostKeyChecking=no -i id_rsa.pub my-app.tar docker-compose.yml $USER@$HOST:/home/$USER/
 
         # SSH into the Hetzner server and deploy the application
-        ssh -o StrictHostKeyChecking=no -i my-key.pem $USER@$HOST << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i id_rsa.pub $USER@$HOST << 'EOF'
           # Load the Docker image
           docker load < /home/$USER/my-app.tar
 
@@ -45,4 +45,4 @@ jobs:
           rm -f /home/$USER/my-app.tar
         EOF
 
-        rm -f private_key.pem  # Cleanup on GitHub Actions runner
+        rm -f id_rsa.pub  # Cleanup on GitHub Actions runner
