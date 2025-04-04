@@ -10,34 +10,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Build and Push Docker Image
-      run: |
-        docker build -t my-app:latest .
-        docker save my-app:latest > my-app.tar
+      - name: Build Docker Image
+        run: |
+          docker build -t my-app:latest .
+          docker save my-app:latest > my-app.tar
 
-    - name: Deploy to Hetzner Server
-  env:
-    PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-    HOST: ${{ secrets.HOST }}
-    USER: ${{ secrets.USER }}
-  run: |
-    echo "$PRIVATE_KEY" > id_rsa
-    chmod 600 id_rsa
+      - name: Deploy to Hetzner Server
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          HOST: ${{ secrets.HOST }}
+          USER: ${{ secrets.USER }}
+        run: |
+          echo "$PRIVATE_KEY" > id_rsa
+          chmod 600 id_rsa
 
     # Transfer Docker image and compose files to Hetzner
     ssh -o StrictHostKeyChecking=no -i id_rsa my-app.tar docker-compose.yml $USER@$HOST:/root/
 
-    # SSH into the Hetzner server and deploy the application
-    ssh -o StrictHostKeyChecking=no -i id_rsa $USER@$HOST << 'EOF'
-      docker load < /root/my-app.tar
-      docker-compose -f /root/docker-compose.yml up -d --force-recreate
-      rm -f /root/my-app.tar
-    EOF
+          # SSH into the Hetzner server and deploy the application
+          ssh -o StrictHostKeyChecking=no -i id_rsa $USER@$HOST << 'EOF'
+            docker load < /root/my-app.tar
+            docker-compose -f /root/docker-compose.yml up -d --force-recreate
+            rm -f /root/my-app.tar
+          EOF
 
-    rm -f id_rsa
+          # Cleanup
+          rm -f id_rsa
