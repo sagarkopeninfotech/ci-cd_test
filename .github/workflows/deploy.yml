@@ -34,9 +34,6 @@ jobs:
 
             git pull origin main  # Pull latest code from GitHub
             cp /root/docker-compose.yml .  # Replace compose file if needed
-
-
-            docker compose up --build 
             docker compose up --build -d 
 
           EOF
