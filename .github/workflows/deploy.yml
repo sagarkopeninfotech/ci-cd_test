@@ -36,8 +36,8 @@ jobs:
             cp /root/docker-compose.yml .  # Replace compose file if needed
 
 
-            docker-compose build --no-cache
-            docker-compose up -d --force-recreate || true
+            docker compose up --build 
+            docker compose up --build -d 
 
           EOF
 
